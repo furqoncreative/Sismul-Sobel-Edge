@@ -1,5 +1,8 @@
-from PIL import Image
-
+import PIL.Image
+import PIL.ImageTk
+from tkinter import filedialog
+from tkinter import *
+from tkinter.ttk import *
 
 # For x direction
 x_kernel = [[1, 0, -1], [2, 0, -2], [1, 0, -1]]
@@ -10,10 +13,14 @@ y_kernel = [[1, 2, 1], [0, 0, 0], [-1, -2, -1]]
 # Returns same image
 identity = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]
 
+timer_id = None
+
+giflist = "loading.gif"
+
 
 def avg_color(tuple_input):
     # Average of colors
-    return (tuple_input[0] + tuple_input[1] + tuple_input[2])/3
+    return (tuple_input[0] + tuple_input[1] + tuple_input[2]) / 3
 
 
 def rgb_to_bw(pil_image):
@@ -41,7 +48,7 @@ def convolve(pil_image, kernel_in):
 
     width = pil_image.size[0]
     height = pil_image.size[1]
-    pil_convolve_image = Image.new('RGB', (width, height))
+    pil_convolve_image = PIL.Image.new('RGB', (width, height))
     convolve_image = pil_convolve_image.load()
     non_convolved_image = pil_image.load()
 
@@ -71,7 +78,7 @@ def euclidean_norm(pil_image_one, pil_image_two):
         print("INPUT SIZE DOES NOT MATCH euclidean norm")
         return None
 
-    pil_euclidean_norm_image = Image.new('RGB', (width_one, height_one))
+    pil_euclidean_norm_image = PIL.Image.new('RGB', (width_one, height_one))
     euclidean_norm_image = pil_euclidean_norm_image.load()
 
     image_one = pil_image_one.load()
@@ -80,20 +87,78 @@ def euclidean_norm(pil_image_one, pil_image_two):
     # Find the euclidean distance between the two arrays at that point
     for i in range(width_one):
         for j in range(height_one):
-            intensity = round((avg_color(image_one[i, j])**2 + avg_color(image_two[i, j])**2)**0.5)
+            intensity = round((avg_color(image_one[i, j]) ** 2 + avg_color(image_two[i, j]) ** 2) ** 0.5)
             euclidean_norm_image[i, j] = (intensity, intensity, intensity)
 
     return pil_euclidean_norm_image
 
 
-if __name__ == "__main__":
-    file = "Pictures/apple.jpg"
-    pil_input_image = Image.open(file)
-
+def sobel_edge():
+    x = openfile()
+    open_img(x.name)
+    pil_input_image = PIL.Image.open(x.name)
     pil_Image_one = convolve(pil_input_image, x_kernel)
     pil_Image_two = convolve(pil_input_image, y_kernel)
     pil_euclidean = euclidean_norm(pil_Image_one, pil_Image_two)
-    # pil_euclidean = euclidean_norm(pil_input_image, pil_input_image)
 
-    pil_euclidean.show()
-    pil_euclidean.save(file[0:len(file)-4] + "_Sobel.jpg", "JPEG")
+    open_img_src(pil_euclidean)
+    pil_euclidean.save(x.name[0:len(x.name) - 4] + "_Sobel.jpg", "JPEG")
+
+
+def open_img(file):
+    # x = openfilename()
+    # img = src
+    img = PIL.Image.open(file)
+    img = img.resize((250, 250), PIL.Image.ANTIALIAS)
+    img = PIL.ImageTk.PhotoImage(img)
+    panel = Label(root, image=img)
+    panel.image = img
+    panel.grid(row=2, column=0)
+
+
+def open_img_src(src):
+    img = src
+    img = img.resize((250, 250), PIL.Image.ANTIALIAS)
+    img = PIL.ImageTk.PhotoImage(img)
+    panel = Label(root, image=img)
+    panel.image = img
+    panel.grid(row=2, column=1)
+
+
+def openfile():
+    file = filedialog.askopenfile(title='"pen')
+    return file
+
+
+def update(ind):
+    frame = frames[ind]
+    ind += 1
+    print(ind)
+    if ind > 30:  # With this condition it will play gif infinitely
+        ind = 0
+    label.configure(image=frame)
+    root.after(100, update, ind)
+
+
+def about():
+    toplvl = Toplevel()  # created Toplevel widger
+    toplvl.geometry("550x200+300+150")
+    Label(toplvl, text="Program yang akan dibuat adalah sebuah implementasi dari algoritma Sobel Edge Detection yang \n"
+                       "berfungsi untuk mendeteksi sisi-sisi pada setiap object dalam gambar yang di input. Output\n "
+                       "dari program ini adalah berupa gambar hitam putih yang yang menujukan sisi dan garis atau \n"
+                       "pola object dalam gambar").grid(row=0, column=0)
+    Label(toplvl, text="Anggota Kelompok :").grid(row=4, column=0, columnspan=5)
+    Label(toplvl, text="1177050005 Adi Fitrianto").grid(row=5, column=0, columnspan=5)
+    Label(toplvl, text="1177050027 Deden Muhamad Furqon").grid(row=6, column=0, columnspan=5)
+    Label(toplvl, text="1177050045 Fikry Dzulfikar Rasyid").grid(row=7, column=0, columnspan=5)
+
+
+if __name__ == "__main__":
+    root = Tk()
+    root.title("Sobel Edge Detection")
+    root.geometry("550x300+300+150")
+    root.resizable(width=True, height=True)
+
+    Button(root, text='ABOUT', command=about).grid(row=0, column=0)
+    Button(root, text='LOAD IMAGE', command=sobel_edge).grid(row=1, column=0)
+    root.mainloop()
